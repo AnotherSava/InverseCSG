@@ -698,7 +698,7 @@ def WriteSolidPrimitivesToSketch(file_name, spheres, rotations_and_offsets, \
 
   # Generate cuboid hints.
   def PrintList(l):
-    return str(l).replace('[', '{').replace(']', '}')
+    return str([float(x) for x in l]).replace('[', '{').replace(']', '}')
   def GenerateCuboidHint(rotation_and_offset):
     coord, x, y, z = rotation_and_offset
     roll, pitch, yaw = CoordToEulerAngle(coord)
