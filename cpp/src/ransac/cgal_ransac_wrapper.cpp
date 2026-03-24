@@ -10,7 +10,7 @@
 #include "CGAL/property_map.h"
 #include "CGAL/Timer.h"
 #include "CGAL/number_utils.h"
-#include "CGAL/Shape_detection_3.h"
+#include "CGAL/Shape_detection/Efficient_RANSAC.h"
 #include "common/file_helper.h"
 #include "primitive/plane_surface.h"
 #include "primitive/cylindrical_surface.h"
@@ -29,14 +29,14 @@ typedef CGAL::Nth_of_tuple_property_map<0, PointWithNormal>  PointMap;
 typedef CGAL::Nth_of_tuple_property_map<1, PointWithNormal>  NormalMap;
 // In Shape_detection_traits the basic types, i.e., Point and Vector types
 // as well as iterator type and property maps, are defined.
-typedef CGAL::Shape_detection_3::Shape_detection_traits<Kernel,
+typedef CGAL::Shape_detection::Efficient_RANSAC_traits<Kernel,
     PwnVector, PointMap, NormalMap>            Traits;
-typedef CGAL::Shape_detection_3::Efficient_RANSAC<Traits>    EfficientRansac;
-typedef CGAL::Shape_detection_3::Plane<Traits>               Plane;
-typedef CGAL::Shape_detection_3::Sphere<Traits>              Sphere;
-typedef CGAL::Shape_detection_3::Cylinder<Traits>            Cylinder;
-typedef CGAL::Shape_detection_3::Cone<Traits>                Cone;
-typedef CGAL::Shape_detection_3::Torus<Traits>               Torus;
+typedef CGAL::Shape_detection::Efficient_RANSAC<Traits>    EfficientRansac;
+typedef CGAL::Shape_detection::Plane<Traits>               Plane;
+typedef CGAL::Shape_detection::Sphere<Traits>              Sphere;
+typedef CGAL::Shape_detection::Cylinder<Traits>            Cylinder;
+typedef CGAL::Shape_detection::Cone<Traits>                Cone;
+typedef CGAL::Shape_detection::Torus<Traits>               Torus;
 
 CgalRansacWrapper::CgalRansacWrapper(const mesh::TriMesh& shape)
   : shape_(shape), points_(3, 0), normals_(3, 0), point_to_face_(0),
