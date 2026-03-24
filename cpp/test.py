@@ -49,3 +49,7 @@ for example in examples:
   # Print the bad examples so far.
   print('Bad examples so far:')
   print(bad_examples)
+
+if bad_examples:
+  print('Failed examples: %s' % bad_examples)
+  sys.exit(1)

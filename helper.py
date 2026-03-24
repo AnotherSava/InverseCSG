@@ -33,12 +33,16 @@ def Run(command, exception_handle=DefaultExceptionHandle, return_msg=False):
     ret_val = os.system(command)
   else:
     p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    ret_val = p.wait()
-    text = p.stdout.read().decode("utf-8").split('\n')[0]
+    stdout, _ = p.communicate()
+    text = stdout.decode("utf-8").split('\n')[0]
+    ret_val = p.returncode
 
   time_intvl = time.time() - time_start
   print('Command finished in %f seconds.' % time_intvl)
-  exit_code = ret_val >> 8
+  if return_msg:
+    exit_code = ret_val
+  else:
+    exit_code = ret_val >> 8
 
   if exit_code != 0 and exception_handle is not None:
     exception_handle(command, exit_code)
