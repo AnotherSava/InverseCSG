@@ -641,8 +641,9 @@ def RunSketchPipeline():
   # Major loop starts here.
   part_file = os.path.join(point_output_dir, 'part_0.data')
   shutil.copy(mesh_info['vol_pos_file'], part_file)
-  todo = [part_file] 
+  todo = [part_file]
   solutions = []
+  skipped_parts = []
   while len(todo) > 0:
     # Pop the first element.
     part_file = todo[0]
@@ -714,19 +715,31 @@ def RunSketchPipeline():
         return
     else:
       # Segment the volume.
-      point_cloud_seg.SegmentPointCloud(part_file, seg_num, \
+      actual_seg_num = point_cloud_seg.SegmentPointCloud(part_file, seg_num, \
         part_file[:-len('.data')])
+      if actual_seg_num <= 1:
+        # Cannot subdivide further — skip to avoid infinite loop.
+        print('Warning: part %d could not be segmented further, skipping.' % idx)
+        skipped_parts.append(idx)
+        continue
       # Get the last idx.
       last_part_file = todo[-1] if len(todo) > 0 else part_file
       last_idx = int(last_part_file[last_part_file.rfind('_') + 1 \
-        : -len('.data')]) 
+        : -len('.data')])
       new_idx = last_idx + 1
-      for i in range(seg_num):
+      for i in range(actual_seg_num):
         new_part_file = \
           part_file[:part_file.rfind('_') + 1] + str(new_idx + i) + '.data'
         shutil.copyfile(part_file[:-len('.data')] + '_' + str(i) + '.data' , \
           new_part_file)
         todo.append(new_part_file)
+
+  # If any parts were skipped, the solution is incomplete.
+  if skipped_parts:
+    helper.PrintWithRedColor(
+      'Error: parts %s could not be solved or subdivided. '
+      'The result has missing geometry.' % skipped_parts)
+    sys.exit(-1)
 
 if __name__ == '__main__':
   pass
