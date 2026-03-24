@@ -23,10 +23,10 @@ def AutoComplete(text, state):
   return (glob.glob(text + '*') + [None])[state]
 
 def SaveCustomizedEnvironmentVariables(env_variables, file_path):
-  f = open(file_path, 'w')
-  f.write('# You can manually change the environment variables below:\n')
-  for key, val in env_variables.items():
-    f.write('%s: %s\n' % (key, val))
+  with open(file_path, 'w') as f:
+    f.write('# You can manually change the environment variables below:\n')
+    for key, val in env_variables.items():
+      f.write('%s: %s\n' % (key, val))
 
 def CheckVersionNumber(version_number, target):
   major, minor, change = version_number.split('.')
@@ -108,43 +108,34 @@ def CheckSketch(build_folder):
 
   return True
 
-def InstallCGAL(build_folder, init=True):
-  helper.Run('sudo apt-get install libcgal-dev')
-  helper.PrintWithGreenColor('Installed libcgal-dev')
-  if init:
-    cgal_url = 'https://github.com/CGAL/cgal/releases/download/' \
-               'releases%2FCGAL-4.12/CGAL-4.12.zip'
-    cgal_file = os.path.join(build_folder, 'cgal.zip')
-    urllib.request.urlretrieve(cgal_url, cgal_file)
-    helper.Run('unzip -o -q %s -d %s' % (cgal_file, build_folder))
-    os.remove(cgal_file)
-  # Now you have the source code.
-  helper.PrintWithGreenColor('Downloaded and unzipped CGAL 4.12')
-  cgal_dir = ''
-  for folder_name in os.listdir(build_folder):
-    if 'cgal' in folder_name or 'CGAL' in folder_name:
-      cgal_dir = os.path.join(build_folder, folder_name)
-      break
-  # Add cgal_root to the environment variable list.
-  env_variables['CGAL_DIR'] = os.environ['CGAL_DIR'] = cgal_dir
+def InstallCGAL():
+  helper.Run('sudo apt-get install -y libcgal-dev')
+  helper.PrintWithGreenColor('Installed libcgal-dev (system package)')
 
-def InstallEigen(root_folder, init=True):
-  if init:
-    # helper.Run('wget http://bitbucket.org/eigen/eigen/get/3.3.4.zip')
-    helper.Run('wget https://github.com/eigenteam/eigen-git-mirror/archive/3.3.4.zip')
+def InstallEigen(root_folder):
+  # Prefer system Eigen3. Fall back to downloading vendored copy.
+  exit_code = helper.Run('dpkg -s libeigen3-dev', None)
+  if exit_code == 0:
+    helper.PrintWithGreenColor('Using system Eigen3 (libeigen3-dev)')
+  else:
+    helper.PrintWithGreenColor('System Eigen3 not found, downloading vendored copy...')
     cpp_lib_folder = os.path.join(root_folder, 'cpp', 'lib')
-    helper.Run('unzip 3.3.4.zip -d %s' % os.path.join(cpp_lib_folder))
-    helper.Run('mv %s %s' % (os.path.join(cpp_lib_folder, \
-     'eigen-git-mirror-3.3.4'), os.path.join(cpp_lib_folder, 'eigen-3.3.4')))
-    helper.Run('rm 3.3.4.zip')
-    helper.PrintWithGreenColor('Installed Eigen')
+    zip_path = os.path.join(cpp_lib_folder, 'eigen-3.3.4.zip')
+    helper.Run('wget -q -O %s https://gitlab.com/libeigen/eigen/-/archive/3.3.4/eigen-3.3.4.zip' % zip_path)
+    helper.Run('unzip -o -q %s -d %s' % (zip_path, cpp_lib_folder))
+    os.remove(zip_path)
+    # Rename extracted directory to match expected name (GitLab archives
+    # may include a commit hash suffix like eigen-3.3.4-<hash>).
+    expected = os.path.join(cpp_lib_folder, 'eigen-3.3.4')
+    if not os.path.isdir(expected):
+      for name in os.listdir(cpp_lib_folder):
+        if name.startswith('eigen-3.3.4'):
+          os.rename(os.path.join(cpp_lib_folder, name), expected)
+          break
+    helper.PrintWithGreenColor('Installed vendored Eigen 3.3.4')
 
 def InstallJava():
-  # java not hosted anymore: http://www.webupd8.org/2014/03/how-to-install-oracle-java-8-in-debian.html
-  # helper.Run('sudo add-apt-repository -y ppa:webupd8team/java')
-  # helper.Run('sudo apt-get update')
-  # helper.Run('sudo apt-get install oracle-java8-installer')
-  helper.Run('sudo apt-get install openjdk-8-jre')
+  helper.Run('sudo apt-get install -y default-jdk')
 
   # Currently JAVA_HOME is hard coded.
   # java_home = '/usr/lib/jvm/java-8-oracle/' 
@@ -170,7 +161,7 @@ def InstallMaven():
   #     maven_loc = os.path.join(build_folder, folder_name, 'bin')
   #     env_variables['PATH'] = os.environ['PATH'] \
   #                           = maven_loc + ':' + os.environ['PATH']
-  helper.Run('sudo apt-get install build-essential autoconf libtool flex bison mercurial maven')
+  helper.Run('sudo apt-get install -y maven')
   # Check maven.
   helper.Run('mvn -v')
 
@@ -210,36 +201,23 @@ def main():
     
     # Check all C++ dependencies.
     if args.deps:
-      print('Attempt to install build-essential, autoconf, libtool, flex, bison, '
-            'mecurial, zsh, and cmake. Asking for sudo privilege.')
-      # This works for Ubuntu 17.04 and 16.04.
-      exit_code = helper.Run('sudo apt-get install gcc-6 g++-6 -y', None)
-      if exit_code != 0:
-        # This works for Ubuntu 14.04.
-        helper.Run('sudo apt-get update')
-        helper.Run('sudo apt-get install build-essential ' \
-          'software-properties-common -y')
-        helper.Run('sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y')
-        helper.Run('sudo apt-get update')
-        helper.Run('sudo apt-get install gcc-snapshot -y')
-        helper.Run('sudo apt-get update')
-        helper.Run('sudo apt-get install gcc-6 g++-6 -y')
-        helper.Run('sudo apt-get install autoconf libtool flex bison '
-          'mercurial zsh cmake git')
-    
+      print('Installing build tools and dependencies...')
+      helper.Run('sudo apt-get update')
+      helper.Run('sudo apt-get install -y build-essential autoconf libtool '
+        'flex bison cmake git')
+
       # Install python dependencies.
-      # TODO check if python version >= 3.7
+      os.environ['PIP_BREAK_SYSTEM_PACKAGES'] = '1'
       helper.Run('python3 -m pip install -U pip setuptools')
-      helper.Run('python3 -m pip install --upgrade pip')
-      helper.Run('python3 -m pip install numpy scipy matplotlib ipython '
-                 'jupyter pandas sympy nose')
-      helper.Run('python3 -m pip install -U scikit-learn')
+      helper.Run('python3 -m pip install numpy scipy matplotlib scikit-learn')
     
     # Install CGAL.
-    InstallCGAL(build_folder, args.eigen)
-    
+    if args.cgal:
+      InstallCGAL()
+
     # Install Eigen-3.3.4.
-    InstallEigen(root_folder, args.cgal)
+    if args.eigen:
+      InstallEigen(root_folder)
     
     # Compile cpp.
     cpp_build_folder = os.path.join(build_folder, 'cpp')
@@ -247,10 +225,7 @@ def main():
       os.makedirs(cpp_build_folder)
     if args.cpp:
       os.chdir(cpp_build_folder)
-      os.environ['CC'] = '/usr/bin/gcc-6'
-      os.environ['CXX'] = '/usr/bin/g++-6'
-      helper.Run('cmake -DCGAL_DIR=%s %s' % (env_variables['CGAL_DIR'], \
-                                             os.path.join(root_folder, 'cpp')))
+      helper.Run('cmake %s' % os.path.join(root_folder, 'cpp'))
       helper.Run('make')
       helper.PrintWithGreenColor('C++ program compiled successfully.')
     env_variables['CSG_CPP_EXE'] = os.path.join(cpp_build_folder,
@@ -265,8 +240,8 @@ def main():
       sys.exit(0)
     
     # If we are here, Sketch is not properly installed.
-    # First, install Oracle JDK 8.
-    print('Attempt to install Oracle JDK 8. Asking for sudo privilege.')
+    # First, install Java JDK.
+    print('Attempt to install Java JDK. Asking for sudo privilege.')
     InstallJava()
     
     # Next, install maven.

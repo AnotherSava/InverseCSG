@@ -10,22 +10,18 @@ The current repository is modified from the original code snapshot recovered fro
 
 
 ## Platform
-* `Linux` (tested on `Ubuntu 14.04` and `Ubuntu 16.04`)
-* [`Windows Linux Subsystem`](https://docs.microsoft.com/en-us/windows/wsl/install-win10) (tested on `Ubuntu 16.04 LTS`)
+* `Linux` (tested on `Ubuntu 20.04` and later)
+* [`Windows Subsystem for Linux`](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 
 ## Dependencies
 
-* `C++` toolchain: `sudo apt-get install build-essential autoconf libtool flex bison mercurial zsh cmake`.
+* `C++14` toolchain: `sudo apt-get install build-essential autoconf libtool flex bison cmake git`.
+* `Eigen3`: system install preferred (`sudo apt-get install libeigen3-dev`), falls back to vendored Eigen 3.3.4.
+* `CGAL >= 5.0`: `sudo apt-get install libcgal-dev`.
 * `Python 3.7+` (required by the latest sklearn)
-  - using a python distribution within a conda environment is highly recommended. You can follow [this tutorial]( https://www.microsoft.com/en-us/p/windows-terminal/9n0dx20hk701?rtc=1&activetab=pivot:overviewtab) to install miniconda on an ubuntu OS instance. Then, create and activate a conda environment with python 3.7 by: 
-  ```base
-  conda create -n inv_csg_env python=3.7 
-  conda activate inv_csg_env
-  python3 --version
-  # you should see "Python 3.7.7"
-  ```
+  - using a python distribution within a conda environment is highly recommended.
 * The latest `Sketch`.
-* `Java >= 1.8` (needed by `Sketch`).
+* `Java JDK` (`sudo apt-get install default-jdk`; needed by `Sketch`).
 * `maven >= 2.2.1` (needed by `Sketch`).
 
 ## Installation
@@ -46,12 +42,13 @@ You can see more options by `python3 install.py -h`.
 <details>
 You can also choose to do a manual installation if `install.py` fails to finish successfully.
 
-* Run
+* Install build tools and dependencies:
 
   ```bash
-  sudo apt-get install build-essential autoconf libtool flex bison mercurial zsh cmake
+  sudo apt-get install build-essential autoconf libtool flex bison cmake git
+  sudo apt-get install libcgal-dev
+  sudo apt-get install libeigen3-dev  # optional; vendored Eigen 3.3.4 used if absent
   ```
-
 
 * Navigate to your `build_folder`, create a `cpp` subfolder, and compile the `C++` code:
 
