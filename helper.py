@@ -41,8 +41,10 @@ def Run(command, exception_handle=DefaultExceptionHandle, return_msg=False):
   print('Command finished in %f seconds.' % time_intvl)
   if return_msg:
     exit_code = ret_val
+  elif os.WIFEXITED(ret_val):
+    exit_code = os.WEXITSTATUS(ret_val)
   else:
-    exit_code = ret_val >> 8
+    exit_code = 1
 
   if exit_code != 0 and exception_handle is not None:
     exception_handle(command, exit_code)
@@ -83,16 +85,15 @@ def LoadOffMesh(off_file_name):
   return all_vertices, all_faces
 
 def SaveOffMesh(off_file_name, V, F):
-  f = open(off_file_name, 'w')
-  f.write('OFF\n')
-  vertex_num = V.shape[0]
-  face_num = F.shape[0]
-  f.write('%d %d 0\n' % (vertex_num, face_num))
-  for i in range(vertex_num):
-    f.write('%f %f %f\n' % (V[i, 0], V[i, 1], V[i, 2]))
-  for i in range(face_num):
-    f.write('3 %d %d %d\n' % (F[i, 0], F[i, 1], F[i, 2])) 
-  f.close()
+  with open(off_file_name, 'w') as f:
+    f.write('OFF\n')
+    vertex_num = V.shape[0]
+    face_num = F.shape[0]
+    f.write('%d %d 0\n' % (vertex_num, face_num))
+    for i in range(vertex_num):
+      f.write('%f %f %f\n' % (V[i, 0], V[i, 1], V[i, 2]))
+    for i in range(face_num):
+      f.write('3 %d %d %d\n' % (F[i, 0], F[i, 1], F[i, 2]))
 
 def GetOffMeshBoundingBox(off_file_name):
   v, _ = LoadOffMesh(off_file_name)
@@ -121,10 +122,9 @@ def SaveDataFile(data_file, points):
   if points.size == 0:
     number = int(0)
     all_bytes = number.to_bytes(4, sys.byteorder, signed=True)
-    f = open(data_file, 'w+b')
-    content = b''.join([all_bytes])
-    f.write(content)
-    f.close()
+    with open(data_file, 'w+b') as f:
+      content = b''.join([all_bytes])
+      f.write(content)
     return
 
   # Check inputs.
@@ -134,10 +134,9 @@ def SaveDataFile(data_file, points):
   number = int(points.shape[0])
   number_bytes = number.to_bytes(4, sys.byteorder, signed=True)
   data_bytes = points.astype(np.float64, 'C').tobytes('C')
-  f = open(data_file, 'w+b')
-  content = b''.join([number_bytes, data_bytes])
-  f.write(content)
-  f.close()
+  with open(data_file, 'w+b') as f:
+    content = b''.join([number_bytes, data_bytes])
+    f.write(content)
 
 ################################################################################
 # Convert points to sketch files.
@@ -147,33 +146,31 @@ def SavePointToSketch(data_file, idx_file, pos_points, neg_points):
   if pos_points.shape[1] != 3 or neg_points.shape[1] != 3:
     PrintWithRedColor('PointToSketch: incorrect input.')
     sys.exit(-1)
-  f = open(data_file, 'w')
-  num_pos = pos_points.shape[0]
-  num_neg = neg_points.shape[0]
-  if num_pos + num_neg <= 0:
-    PrintWithRedColor('PointToSketch: empty points.')
-    sys.exit(-1)
-  f.write('int NUM_DATA = %d;\n' % (num_pos + num_neg))
-  points = np.vstack((pos_points, neg_points))
-  all_x = ', '.join([str(float(x)) for x in points[:, 0]])
-  f.write('float[NUM_DATA] xs = {%s};\n' % all_x) 
-  all_y = ', '.join([str(float(y)) for y in points[:, 1]])
-  f.write('float[NUM_DATA] ys = {%s};\n' % all_y) 
-  all_z = ', '.join([str(float(z)) for z in points[:, 2]])
-  f.write('float[NUM_DATA] zs = {%s};\n' % all_z) 
-  all_labels = ', '.join(['1'] * num_pos + ['0'] * num_neg)
-  f.write('bit[NUM_DATA] labels = {%s};\n' % all_labels)
-  f.close()
+  with open(data_file, 'w') as f:
+    num_pos = pos_points.shape[0]
+    num_neg = neg_points.shape[0]
+    if num_pos + num_neg <= 0:
+      PrintWithRedColor('PointToSketch: empty points.')
+      sys.exit(-1)
+    f.write('int NUM_DATA = %d;\n' % (num_pos + num_neg))
+    points = np.vstack((pos_points, neg_points))
+    all_x = ', '.join([str(float(x)) for x in points[:, 0]])
+    f.write('float[NUM_DATA] xs = {%s};\n' % all_x)
+    all_y = ', '.join([str(float(y)) for y in points[:, 1]])
+    f.write('float[NUM_DATA] ys = {%s};\n' % all_y)
+    all_z = ', '.join([str(float(z)) for z in points[:, 2]])
+    f.write('float[NUM_DATA] zs = {%s};\n' % all_z)
+    all_labels = ', '.join(['1'] * num_pos + ['0'] * num_neg)
+    f.write('bit[NUM_DATA] labels = {%s};\n' % all_labels)
 
   # Write idx file.
-  f = open(idx_file, 'w')
-  all_idx = []
-  for i in range(num_pos + num_neg):
-    all_idx.append(i)
-  random.shuffle(all_idx)
-  for i in all_idx:
-    f.write('%d\n' % i)
-  f.close()
+  with open(idx_file, 'w') as f:
+    all_idx = []
+    for i in range(num_pos + num_neg):
+      all_idx.append(i)
+    random.shuffle(all_idx)
+    for i in all_idx:
+      f.write('%d\n' % i)
 
 ################################################################################
 # Point set operations.

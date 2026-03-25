@@ -1,6 +1,7 @@
 import os, sys, subprocess
 import readline, glob # For autocompleting file path.
 import urllib.request
+import shlex
 import shutil
 import helper
 import argparse
@@ -121,8 +122,8 @@ def InstallEigen(root_folder):
     helper.PrintWithGreenColor('System Eigen3 not found, downloading vendored copy...')
     cpp_lib_folder = os.path.join(root_folder, 'cpp', 'lib')
     zip_path = os.path.join(cpp_lib_folder, 'eigen-3.3.4.zip')
-    helper.Run('wget -q -O %s https://gitlab.com/libeigen/eigen/-/archive/3.3.4/eigen-3.3.4.zip' % zip_path)
-    helper.Run('unzip -o -q %s -d %s' % (zip_path, cpp_lib_folder))
+    helper.Run('wget -q -O %s https://gitlab.com/libeigen/eigen/-/archive/3.3.4/eigen-3.3.4.zip' % shlex.quote(zip_path))
+    helper.Run('unzip -o -q %s -d %s' % (shlex.quote(zip_path), shlex.quote(cpp_lib_folder)))
     os.remove(zip_path)
     # Rename extracted directory to match expected name (GitLab archives
     # may include a commit hash suffix like eigen-3.3.4-<hash>).
@@ -140,13 +141,13 @@ def InstallJava():
   # Currently JAVA_HOME is hard coded.
   # java_home = '/usr/lib/jvm/java-8-oracle/' 
   # java_home = '/usr/lib/jvm/java-8-openjdk-amd64'
-  java_path_cmd = "jrunscript -e \'java.lang.System.out.println(java.lang.System.getProperty(\"java.home\"));\'"
+  java_path_cmd = "dirname $(dirname $(readlink -f $(which java)))"
   java_home, _ = helper.Run(java_path_cmd, return_msg=True)
   env_variables['JAVA_HOME'] = os.environ['JAVA_HOME'] = java_home
   path = os.path.join(java_home, 'bin') + ':' + os.environ['PATH']
   env_variables['PATH'] = os.environ['PATH'] = path
   # helper.Run('%s -version' % os.path.join(java_home, 'bin', 'javac'))
-  helper.Run('%s -version' % os.path.join(java_home, 'bin', 'java'))
+  helper.Run('%s -version' % shlex.quote(os.path.join(java_home, 'bin', 'java')))
 
 def InstallMaven():
   # maven_url = 'http://mirrors.koehn.com/apache/maven/maven-3/3.5.3/' \
@@ -225,7 +226,7 @@ def main():
       os.makedirs(cpp_build_folder)
     if args.cpp:
       os.chdir(cpp_build_folder)
-      helper.Run('cmake %s' % os.path.join(root_folder, 'cpp'))
+      helper.Run('cmake %s' % shlex.quote(os.path.join(root_folder, 'cpp')))
       helper.Run('make')
       helper.PrintWithGreenColor('C++ program compiled successfully.')
     env_variables['CSG_CPP_EXE'] = os.path.join(cpp_build_folder,

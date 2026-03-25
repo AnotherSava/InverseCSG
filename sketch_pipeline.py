@@ -96,7 +96,7 @@ def SetupSketchPipeline(args):
     os.makedirs(output_dir)
   if surface_density <= 0:
     print('Warning: invalid surface density. Use 10000 instead.')
-    sample_density = 10000
+    surface_density = 10000
   if seg_num <= 1:
     print('Warning: invalid seg num. Use 2 instead.')
     seg_num = 2
