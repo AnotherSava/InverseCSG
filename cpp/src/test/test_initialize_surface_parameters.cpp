@@ -45,8 +45,14 @@ void TestInitializeSurfaceParameters(const std::string& conf_file,
     for (int i = 0; i < shape.NumOfFaces(); ++i) region[i] = i;
     vsa::QuadraticSurface quad_face(wrapper);
     quad_face.InitializeSurfaceParameters(region);
+    // Compute average squared radius so the target matches the actual mesh
+    // (the mesh is NOT a unit sphere — R ≈ 5).
+    double r_sq = 0.0;
+    for (int i = 0; i < shape.NumOfVertices(); ++i)
+      r_sq += shape.vertex(i).squaredNorm();
+    r_sq /= shape.NumOfVertices();
     Eigen::VectorXd target(10);
-    target << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0;
+    target << -r_sq, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0;
     Eigen::VectorXd estimate = quad_face.parameters();
     if (estimate(0) > 0) estimate = -estimate;
     target *= estimate.norm() / target.norm();
