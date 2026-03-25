@@ -1,6 +1,10 @@
 build
+output
 __pycache__
 *~
 
 cpp/lib/eigen*
 *.zip*
+
+# ralphex progress logs
+.ralphex/progress/

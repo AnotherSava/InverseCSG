@@ -5,7 +5,7 @@ import sys
 # Usage: python3 test.py --builddir <build_folder> --dataset <synthetic/cad>
 parser = argparse.ArgumentParser()
 parser.add_argument('--builddir',
-  help='same as the build folder used in install.py', default='../build/')
+  help='same as the build folder used in install.py', default='build/')
 parser.add_argument('--dataset',
   help='choose either "synthetic" or "cad"', default='cad')
 args = parser.parse_args()

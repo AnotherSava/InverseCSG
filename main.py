@@ -9,7 +9,7 @@ import sketch_pipeline
 parser = argparse.ArgumentParser()
 parser.add_argument('--builddir',
                     help='same as the build folder used in install.py',
-                    default='../build/')
+                    default='build/')
 parser.add_argument('--countersample', help='number of counter samples at '
                     'each iteration. Used by sketch only', default=100)
 parser.add_argument('--eps', help='minimum distance to mesh', default='0.01')
@@ -22,7 +22,7 @@ parser.add_argument('--mesh', help='location of the .off file',
 parser.add_argument('--method', help='choose "sketch" or "genetic"',
                     default='sketch')
 parser.add_argument('--outdir', help='a folder to store all results',
-                    default='../one_cube/')
+                    default='output/one_cube/')
 parser.add_argument('--surfacedensity', help='number of samples in unit ' \
                     'volume in the surface shell', default=10000)
 parser.add_argument('--seg', help='number of segmentations', default=2)
